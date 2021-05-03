@@ -1,0 +1,68 @@
+load(":version.bzl", "get_version", "get_name")
+
+load("@dagger//:workspace_defs.bzl", "dagger_rules")
+
+dagger_rules()
+
+# Library group
+java_library(
+    name = "all-external-targets",
+    srcs = glob(["**/src/main/java/**/*.java"]),
+    resources = glob(["**/src/main/resources/**"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@maven_dagger//:com_google_dagger_dagger",
+        "@maven_dagger//:com_google_dagger_dagger_compiler",
+        "@maven_dagger//:javax_inject_javax_inject",
+
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:org_slf4j_slf4j_simple",
+        "@maven//:org_apache_logging_log4j_log4j_core",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_slf4j_impl",
+    ],
+)
+
+# Generate Service
+java_binary(
+    name = "service",
+    main_class = "com.trl.play_with_dagger_2.Main",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":all-external-targets"]
+)
+
+# Compile Test Code
+java_library(
+    name = "all-test-targets",
+    srcs = glob(["**/src/test/java/**/*.java"]),
+    resources = glob(["**/src/main/resources/**"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":all-external-targets",
+        "@maven_test//:org_junit_jupiter_junit_jupiter_api",
+        "@maven_test//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven_test//:org_junit_platform_junit_platform_console",
+        "@maven_test//:org_assertj_assertj_core",
+    ],
+)
+
+# Execute tests
+java_test(
+     name = "tests",
+     size = "small",
+     args = ["--select-package=com.trl.play_with_dagger_2"],
+     use_testrunner = False,
+     main_class = "org.junit.platform.console.ConsoleLauncher",
+     visibility = ["//visibility:public"],
+     runtime_deps = [
+        ":all-test-targets"
+     ],
+)
+
+java_plugin(
+    name = "dagger_plugin",
+    processor_class = "dagger.internal.codegen.ComponentProcessor",
+    deps = [
+        "@maven//:com_google_dagger_dagger_compiler",
+    ],
+)
